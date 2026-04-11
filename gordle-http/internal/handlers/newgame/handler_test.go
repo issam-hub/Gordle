@@ -1,6 +1,7 @@
 package newgame
 
 import (
+	"gordle-http/internal/core"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -9,6 +10,14 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+type gameAdderStub struct {
+	err error
+}
+
+func (g gameAdderStub) Add(_ core.Game) error {
+	return g.err
+}
+
 func TestHandle(t *testing.T) {
 	req, err := http.NewRequest(http.MethodPost, "/games", nil)
 
@@ -16,7 +25,9 @@ func TestHandle(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 
-	Handle(recorder, req)
+	handlerFunc := Handler(gameAdderStub{})
+
+	handlerFunc(recorder, req)
 
 	assert.Equal(t, http.StatusCreated, recorder.Code)
 	assert.Equal(t, "application/json", recorder.Header().Get("Content-Type"))
