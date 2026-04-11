@@ -1,6 +1,7 @@
 package status
 
 import (
+	"gordle-http/internal/core"
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -8,6 +9,17 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
+
+type gameGetterStub struct {
+	game core.Game
+}
+
+func (g gameGetterStub) Get(id string) core.Game {
+	g.game = core.Game{
+		ID: core.GameID(id),
+	}
+	return g.game
+}
 
 func TestHandle(t *testing.T) {
 	req, err := http.NewRequest(http.MethodGet, "/games/", nil)
@@ -17,7 +29,9 @@ func TestHandle(t *testing.T) {
 
 	recorder := httptest.NewRecorder()
 
-	Handle(recorder, req)
+	handlerFunc := Handler(gameGetterStub{})
+
+	handlerFunc(recorder, req)
 
 	assert.Equal(t, http.StatusOK, recorder.Code)
 	assert.JSONEq(t, `{"id": "1","attempts_left": 0,"guesses": null,"word_length": 0,"status": ""}`, recorder.Body.String())
