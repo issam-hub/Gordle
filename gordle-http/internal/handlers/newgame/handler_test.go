@@ -72,7 +72,7 @@ func TestHandler(t *testing.T) {
 }
 
 func TestCreateGame(t *testing.T) {
-	g, err := createGame(strings.NewReader("test"), gameAdderStub{nil})
+	g, err := createGame(gameAdderStub{nil})
 	require.NoError(t, err)
 
 	assert.Equal(t, uint8(6), g.AttemptsLeft)

@@ -22,19 +22,17 @@ func Handler(db gameGetter) http.HandlerFunc {
 
 		log.Printf("retrieve status of game with id: %v", id)
 
-		game, _ := getGame(id)
+		game, err := db.Get(id)
+		if err != nil {
+			http.Error(w, "game not found", http.StatusNotFound)
+			return
+		}
 
 		apiGame := api.ToGameResponse(game)
 
-		err := json.NewEncoder(w).Encode(apiGame)
+		err = json.NewEncoder(w).Encode(apiGame)
 		if err != nil {
 			log.Printf("failed to write response: %s", err)
 		}
 	}
-
-}
-func getGame(id string) (core.Game, error) {
-	return core.Game{
-		ID: core.GameID(id),
-	}, nil
 }

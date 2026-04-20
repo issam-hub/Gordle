@@ -6,14 +6,12 @@ import (
 	"gordle-http/internal/handlers/newgame"
 	"gordle-http/internal/repository"
 	"net/http"
-
-	"github.com/gorilla/mux"
 )
 
-func Router(db *repository.GameRepository) *mux.Router {
-	r := mux.NewRouter()
-	r.HandleFunc("/games", newgame.Handler(db)).Methods(http.MethodPost)
-	r.HandleFunc("/games/{id}", status.Handler(db)).Methods(http.MethodGet)
-	r.HandleFunc("/games/{id}", guess.Handler(db)).Methods(http.MethodPut)
+func Router(db *repository.GameRepository) *http.ServeMux {
+	r := http.NewServeMux()
+	r.HandleFunc("POST /games", newgame.Handler(db))
+	r.HandleFunc("GET /games/{id}", status.Handler(db))
+	r.HandleFunc("PUT /games/{id}", guess.Handler(db))
 	return r
 }

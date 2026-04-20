@@ -5,8 +5,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"strings"
 	"gordle-http/internal/api"
 	"gordle-http/internal/core"
+	"gordle-http/internal/gordle"
 	"time"
 
 	"github.com/redis/go-redis/v9"
@@ -54,14 +56,24 @@ func (gr *GameRepository) Modify(id string, r api.GuessRequest) (core.Game, erro
 		return core.Game{}, core.ErrGameOver
 	}
 
+	if len([]rune(r.Guess)) != core.WORD_LENGTH {
+		return core.Game{}, fmt.Errorf("guess must be exactly %d characters", core.WORD_LENGTH)
+	}
+
+	feedback := gordle.ComputeFeedback(r.Guess, game.Solution)
+
 	game.Guesses = append(game.Guesses, core.Guess{
 		Word:     r.Guess,
-		Feedback: "",
+		Feedback: feedback,
 	})
-	game.AttemptsLeft--
 
-	if game.AttemptsLeft == 0 {
-		game.Status = core.StatusLost
+	if strings.EqualFold(r.Guess, game.Solution) {
+		game.Status = core.StatusWon
+	} else {
+		game.AttemptsLeft--
+		if game.AttemptsLeft == 0 {
+			game.Status = core.StatusLost
+		}
 	}
 
 	if err := gr.updateWithRedisJSON(ctx, string(game.ID), game); err != nil {
@@ -72,21 +84,20 @@ func (gr *GameRepository) Modify(id string, r api.GuessRequest) (core.Game, erro
 }
 
 func (gr *GameRepository) fetchFromRedisJSON(ctx context.Context, key string) (core.Game, error) {
-	res, err := gr.rdb.Do(ctx, "JSON.GET", key, "$").Result()
+	res, err := gr.rdb.Get(ctx, key).Result()
 	if err != nil {
+		if err == redis.Nil {
+			return core.Game{}, errors.New("game not found")
+		}
 		return core.Game{}, err
 	}
 
-	var games []core.Game
-	if err := json.Unmarshal([]byte(res.(string)), &games); err != nil {
+	var game core.Game
+	if err := json.Unmarshal([]byte(res), &game); err != nil {
 		return core.Game{}, err
 	}
 
-	if len(games) == 0 {
-		return core.Game{}, errors.New("game not found")
-	}
-
-	return games[0], nil
+	return game, nil
 }
 
 func (gr *GameRepository) storeWithRedisJSON(ctx context.Context, key string, data any) error {
@@ -94,10 +105,7 @@ func (gr *GameRepository) storeWithRedisJSON(ctx context.Context, key string, da
 	if err != nil {
 		return err
 	}
-	return gr.rdb.Do(ctx, "JSON.SET", key, "$", string(payload), redis.SetArgs{
-		Mode: "NX",
-		TTL:  3 * time.Second,
-	}).Err()
+	return gr.rdb.SetNX(ctx, key, string(payload), 30*time.Minute).Err()
 }
 
 func (gr *GameRepository) updateWithRedisJSON(ctx context.Context, key string, data any) error {
@@ -105,7 +113,5 @@ func (gr *GameRepository) updateWithRedisJSON(ctx context.Context, key string, d
 	if err != nil {
 		return err
 	}
-	return gr.rdb.Do(ctx, "JSON.SET", key, "$", string(payload), redis.SetArgs{
-		Mode: "XX",
-	}).Err()
+	return gr.rdb.SetXX(ctx, key, string(payload), redis.KeepTTL).Err()
 }

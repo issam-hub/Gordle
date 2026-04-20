@@ -115,3 +115,10 @@ func computeFeedback(guess, solution []rune) feedback {
 func (g *Game) ShowAnswer() string {
 	return string(g.solution)
 }
+
+func ComputeFeedback(guess, solution string) string {
+	guessRunes := splitToUpperCaseCharacters(guess)
+	solutionRunes := splitToUpperCaseCharacters(solution)
+	fb := computeFeedback(guessRunes, solutionRunes)
+	return fb.StringConcat()
+}

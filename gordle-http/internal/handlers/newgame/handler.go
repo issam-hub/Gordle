@@ -6,7 +6,6 @@ import (
 	"gordle-http/internal/api"
 	"gordle-http/internal/core"
 	"gordle-http/internal/gordle"
-	"io"
 	"log"
 	"net/http"
 
@@ -19,7 +18,7 @@ type gameAdder interface {
 
 func Handler(db gameAdder) http.HandlerFunc {
 	return func(w http.ResponseWriter, req *http.Request) {
-		game, err := createGame(req.Body, db)
+		game, err := createGame(db)
 		if err != nil {
 			log.Printf("unable to create a new game: %s", err.Error())
 			http.Error(w, "failed to create a new game", http.StatusInternalServerError)
@@ -37,13 +36,12 @@ func Handler(db gameAdder) http.HandlerFunc {
 	}
 }
 
-func createGame(reader io.Reader, db gameAdder) (core.Game, error) {
+func createGame(db gameAdder) (core.Game, error) {
 	solution := gordle.GetWord(core.WORD_LENGTH)
-	game := gordle.New(reader, solution, core.MAX_ATTEMPTS)
 
 	g := core.Game{
 		ID:           core.GameID(uuid.New().String()),
-		Gordle:       *game,
+		Solution:     solution,
 		AttemptsLeft: core.MAX_ATTEMPTS,
 		Guesses:      []core.Guess{},
 		Status:       core.StatusPlaying,
@@ -51,7 +49,7 @@ func createGame(reader io.Reader, db gameAdder) (core.Game, error) {
 
 	err := db.Add(g)
 	if err != nil {
-		return core.Game{}, fmt.Errorf("failed to save the new game")
+		return core.Game{}, fmt.Errorf("failed to save the new game: %w", err)
 	}
 	return g, nil
 }

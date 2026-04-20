@@ -2,12 +2,11 @@ package core
 
 import (
 	"errors"
-	"gordle-http/internal/gordle"
 )
 
 type Game struct {
 	ID           GameID
-	Gordle       gordle.Game
+	Solution     string
 	AttemptsLeft byte
 	Guesses      []Guess
 	Status       Status
