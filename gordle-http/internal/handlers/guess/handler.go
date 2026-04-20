@@ -27,7 +27,11 @@ func Handler(db GameGuess) http.HandlerFunc {
 			return
 		}
 
-		game, err := guess(id, r)
+		game, err := db.Modify(id, r)
+		if err != nil {
+			http.Error(w, err.Error(), http.StatusInternalServerError)
+			return
+		}
 
 		apiGame := api.ToGameResponse(game)
 
@@ -37,10 +41,4 @@ func Handler(db GameGuess) http.HandlerFunc {
 			log.Printf("failed to write response: %s", err)
 		}
 	}
-}
-
-func guess(id string, r api.GuessRequest) (core.Game, error) {
-	return core.Game{
-		ID: core.GameID(id),
-	}, nil
 }
