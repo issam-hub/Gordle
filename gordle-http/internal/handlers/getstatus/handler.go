@@ -9,7 +9,7 @@ import (
 )
 
 type gameGetter interface {
-	Get(id string) core.Game
+	Get(id string) (core.Game, error)
 }
 
 func Handler(db gameGetter) http.HandlerFunc {
@@ -22,7 +22,7 @@ func Handler(db gameGetter) http.HandlerFunc {
 
 		log.Printf("retrieve status of game with id: %v", id)
 
-		game := getGame(id)
+		game, _ := getGame(id)
 
 		apiGame := api.ToGameResponse(game)
 
@@ -33,8 +33,8 @@ func Handler(db gameGetter) http.HandlerFunc {
 	}
 
 }
-func getGame(id string) core.Game {
+func getGame(id string) (core.Game, error) {
 	return core.Game{
 		ID: core.GameID(id),
-	}
+	}, nil
 }
