@@ -1,9 +1,13 @@
 package core
 
-import "errors"
+import (
+	"errors"
+	"gordle-http/internal/gordle"
+)
 
 type Game struct {
 	ID           GameID
+	Gordle       gordle.Game
 	AttemptsLeft byte
 	Guesses      []Guess
 	Status       Status
@@ -24,3 +28,6 @@ type Guess struct {
 }
 
 var ErrGameOver = errors.New("game over")
+
+const MAX_ATTEMPTS = 6
+const WORD_LENGTH = 5

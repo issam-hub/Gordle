@@ -17,6 +17,7 @@ func ToGameResponse(g core.Game) GameResponse {
 		AttemptsLeft: g.AttemptsLeft,
 		Guesses:      guesses,
 		Status:       string(g.Status),
+		WordLength:   core.WORD_LENGTH,
 	}
 
 	if g.AttemptsLeft == 0 {
