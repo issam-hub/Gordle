@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"os"
 	"strings"
 	"gordle-http/internal/api"
 	"gordle-http/internal/core"
@@ -19,9 +20,13 @@ type GameRepository struct {
 }
 
 func New() *GameRepository {
+	addr := os.Getenv("REDIS_ADDR")
+	if addr == "" {
+		addr = "localhost:6379"
+	}
 	return &GameRepository{
 		rdb: redis.NewClient(&redis.Options{
-			Addr:     "localhost:6379",
+			Addr:     addr,
 			Password: "",
 			DB:       0,
 			Protocol: 2,
